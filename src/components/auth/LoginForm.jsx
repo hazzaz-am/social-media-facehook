@@ -3,21 +3,48 @@ import Field from "../common/Field";
 import { cn } from "../../lib/cn";
 import { useAuth } from "../../hooks/useAuth";
 import { useNavigate } from "react-router";
+import axios from "axios";
 
 export default function LoginForm() {
 	const {
 		register,
 		handleSubmit,
 		formState: { errors },
+		setError,
 	} = useForm();
 	const navigate = useNavigate();
 	const { setAuth } = useAuth();
 
-	const submitForm = (formState) => {
-		const user = { ...formState };
-		setAuth({ user });
-		navigate("/");
-		console.log(formState);
+	const submitForm = async (formState) => {
+		try {
+			const response = await axios.post(
+				`${import.meta.env.VITE_SERVER_BASE_URL}/auth/login`,
+				formState
+			);
+
+			if (response.status === 200) {
+				const { token: responseToken, user } = response.data;
+				if (responseToken) {
+					const authToken = responseToken.token;
+					const refreshToken = responseToken.refreshToken;
+					setAuth({ user, authToken, refreshToken });
+					navigate("/");
+				}
+			}
+		} catch (error) {
+			if (error instanceof Error) {
+				console.log(error);
+				setError("root.random", {
+					type: "random",
+					message: error?.response?.data?.error || error?.message,
+				});
+			} else {
+				setError("root.random", {
+					type: "random",
+					message: `Internal Error`,
+				});
+			}
+		}
 	};
 
 	return (
@@ -57,6 +84,11 @@ export default function LoginForm() {
 					})}
 				/>
 			</Field>
+			{errors?.root?.random?.message && (
+				<div className="my-2.5 p-2.5 text-red-600 bg-red-400/5 rounded-md">
+					{errors?.root?.random?.message}
+				</div>
+			)}
 			<Field>
 				<button
 					className="auth-input bg-lws-green font-bold text-deep-dark transition-all hover:opacity-90 cursor-pointer"
