@@ -1,9 +1,10 @@
-import Navbar from "../components/common/Navbar";
+import { Link } from "react-router";
 
 export default function HomePage() {
 	return (
 		<div>
-			<Navbar />
+			Homepage
+			<Link to="/me">Profile</Link>
 		</div>
 	);
 }
